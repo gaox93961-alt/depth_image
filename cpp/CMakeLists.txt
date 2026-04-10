@@ -13,9 +13,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall")
 add_executable(get_depthimage get_depthimage.cpp)
 target_link_libraries(get_depthimage ${OpenCV_LIBS})
 
-# 定义第二个程序：补全深度图
-add_executable(get_buquan get_buquan.cpp)
-target_link_libraries(get_buquan 
+# Define second program: depth completion
+add_executable(complete_depth complete_depth.cpp)
+target_link_libraries(complete_depth 
     ${OpenCV_LIBS}
     Eigen3::Eigen
 )
