@@ -7,13 +7,14 @@
 #include <chrono>
 #include <iomanip>
 #include <opencv2/opencv.hpp>
+#include <windows.h>
 
 namespace fs = std::filesystem;
 
 // 全局配置
 const std::string task = "um";
-const std::string root_dir = "../";
-const std::string out_dir = "./output";
+const std::string root_dir = "D:/depth-image-C";
+const std::string out_dir = "D:/depth-image-C/output";
 
 // 从标定文件读取变量
 cv::Mat read_variable(const std::string& file_path, const std::string& name, int M, int N) {
@@ -43,11 +44,11 @@ cv::Mat read_variable(const std::string& file_path, const std::string& name, int
 // 加载标定参数
 // 返回: camera(P2 3x3), rotation(3x3), translation(3x1)
 void load_calibration(const std::string& file, cv::Mat& camera, cv::Mat& rotation, cv::Mat& translation) {
-    // 读取 P2 (实际上我们代码用的是 P2 作为相机内参矩阵的一部分)
-    // Python代码里: P2 = read_variable(..., 'P2', 3, 4) 然后取前3列
+    // 读取 P0 (实际上我们代码用的是 P2 作为相机内参矩阵的一部分)
+    // Python代码里: P2 = read_variable(..., 'P0', 3, 4) 然后取前3列
     // 注意：KITTI中 P0/P2 是 3x4 投影矩阵 (K * [R|t])。
     // 原Python逻辑: camera = P2[:, :3]
-    cv::Mat P2_full = read_variable(file, "P2", 3, 4);
+    cv::Mat P2_full = read_variable(file, "P0", 3, 4);
     camera = P2_full(cv::Rect(0, 0, 3, 3)).clone(); // 取前3列 (3x3)
 
     // 读取 Tr_velo_to_cam (3x4)
@@ -79,7 +80,19 @@ cv::Mat load_pointcloud(const std::string& filename) {
     return cv::Mat();
 }
 
+// 格式化文件名 (模拟 Python 的 %06d)
+std::string format_path(const std::string& tmpl, int index) {
+    char buffer[256];
+    std::string format_str = tmpl + "/" + task + "_%06d";
+    // 简单的根据后缀判断
+    if (tmpl == root_dir) {
+        // 需要根据上下文拼接后缀，这里简化处理，手动拼接完整路径
+    }
+    return ""; // 实际在主循环中处理更方便
+}
+
 int main() {
+    SetConsoleOutputCP(65001);
     // 创建输出目录
     if (!fs::exists(out_dir)) {
         fs::create_directories(out_dir);
@@ -87,12 +100,10 @@ int main() {
 
     // 统计文件数量
     int num_files = 0;
-    if (fs::exists(root_dir)) {
-        for (const auto& entry : fs::directory_iterator(root_dir)) {
-            std::string fname = entry.path().filename().string();
-            if (fname.find(task + "_") == 0 && fname.find(".png") != std::string::npos) {
-                num_files++;
-            }
+    for (const auto& entry : fs::directory_iterator(root_dir)) {
+        std::string fname = entry.path().filename().string();
+        if (fname.find(task + "_") == 0 && fname.find(".png") != std::string::npos) {
+            num_files++;
         }
     }
     std::cout << "找到 " << num_files << " 组数据文件" << std::endl;
@@ -110,7 +121,7 @@ int main() {
         std::string calib_path = root_dir + "/" + task + "_" + id_str + ".txt";
         std::string im_path = root_dir + "/" + task + "_" + id_str + ".png";
         std::string velo_path = root_dir + "/" + task + "_" + id_str + ".bin";
-        std::string out_path = out_dir + "/" + task + "_" + id_str + "-depth.png";
+        std::string out_path = out_dir + "/" + task + "_" + id_str + ".png";
         std::string stats_path = out_dir + "/" + task + "_" + id_str + "_depth_stats.txt";
 
         if (!fs::exists(calib_path) || !fs::exists(im_path) || !fs::exists(velo_path)) {
@@ -239,12 +250,12 @@ int main() {
         }
 
         cv::imwrite(out_path, depth_norm);
-        std::cout << "  深度图已保存" << std::endl;
+        std::cout << "  ✓ 深度图已保存" << std::endl;
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = t2 - t1;
-    std::cout << "\n所有帧处理完成!" << std::endl;
+    std::cout << "\n✅ 所有帧处理完成!" << std::endl;
     std::cout << "总处理时间: " << elapsed.count() << " 秒" << std::endl;
 
     return 0;

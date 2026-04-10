@@ -13,13 +13,18 @@
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
 
+// Windows 终端编码
+#define NOMINMAX
+#include <windows.h>
+
+
 namespace fs = std::filesystem;
 
 // 定义路径 (请修改为你实际的路径)
-const std::string base_dir = "."; 
-const std::string dir_rgb = base_dir + "/..";
-const std::string dir_depth = base_dir + "/output";
-const std::string out_dir = base_dir + "/results";
+const std::string base_dir = "D:/depth-image-C"; 
+const std::string dir_rgb = base_dir + "/data_test/image";
+const std::string dir_depth = base_dir + "/data_test/depth";
+const std::string out_dir = base_dir + "/data_test/results";
 
 // 类型别名
 using SpMat = Eigen::SparseMatrix<double>;
@@ -160,19 +165,19 @@ cv::Mat fill_depth_colorization(const cv::Mat& imgRgb, const cv::Mat& imgDepthIn
 // 主函数
 // ---------------------------------------------------------
 int main() {
+    SetConsoleOutputCP(65001); // 解决中文乱码
+
     if (!fs::exists(out_dir)) {
         fs::create_directories(out_dir);
     }
 
     // 获取所有需要处理的文件
     std::vector<std::string> filenames;
-    if (fs::exists(dir_rgb)) {
-        for (const auto& entry : fs::directory_iterator(dir_rgb)) {
-            std::string fname = entry.path().filename().string();
-            // 简单过滤 png
-            if (fname.length() > 4 && fname.substr(fname.length() - 4) == ".png") {
-                filenames.push_back(fname);
-            }
+    for (const auto& entry : fs::directory_iterator(dir_rgb)) {
+        std::string fname = entry.path().filename().string();
+        // 简单过滤 png
+        if (fname.length() > 4 && fname.substr(fname.length() - 4) == ".png") {
+            filenames.push_back(fname);
         }
     }
 
